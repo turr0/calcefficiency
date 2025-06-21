@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calculadora de ROI Efficiency24</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif; /* A common, clean sans-serif font */
+    }
+    /* Add a custom font if Inter is not available or Tailwind default is preferred */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    .brand-blue { color: #007bff; }
+    .bg-brand-blue { background-color: #007bff; }
+    .border-brand-blue { border-color: #007bff; }
+  </style>
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.1.0",
+    "react-dom/": "https://esm.sh/react-dom@^19.1.0/",
+    "react/": "https://esm.sh/react@^19.1.0/",
+    "@google/genai": "https://esm.sh/@google/genai"
+  }
+}
+</script>
+<script>
+  // This script ensures 'process' and 'process.env' objects exist if scripts expect them.
+  // The actual API_KEY (process.env.API_KEY) is expected to be populated by the
+  // deployment environment or a build process that makes it available to client-side code.
+  // If process.env.API_KEY is not set or accessible, Gemini API features will be disabled
+  // as handled in App.tsx.
+  if (typeof process === 'undefined') {
+    window.process = {};
+  }
+  if (typeof window.process.env === 'undefined') {
+    window.process.env = {};
+  }
+  // DO NOT set process.env.API_KEY here for production deployment.
+  // For local development, you might temporarily set it:
+  // window.process.env.API_KEY = "YOUR_LOCAL_DEV_API_KEY";
+  // Ensure this line is removed or commented out before committing for deployment.
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+<body class="bg-gray-100">
+  <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>
