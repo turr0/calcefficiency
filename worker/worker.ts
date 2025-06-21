@@ -1,7 +1,9 @@
+/// <reference types="@cloudflare/workers-types" />
 
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import { getAssetFromKV, mapRequestToAsset } from "@cloudflare/kv-asset-handler";
-import type { KVNamespace, ExecutionContext } from '@cloudflare/workers-types';
+// KVNamespace and ExecutionContext are now globally available via the triple-slash directive
+// import type { KVNamespace, ExecutionContext } from '@cloudflare/workers-types'; // Removed
 
 export interface Env {
   API_KEY: string;

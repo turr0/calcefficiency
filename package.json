@@ -6,8 +6,11 @@
     "deploy": "wrangler deploy",
     "dev": "wrangler dev",
     "start": "wrangler dev",
-    "build:client": "esbuild public/index.tsx --bundle --outfile=public/bundle.js --jsx=automatic --platform=browser --format=esm --define:process.env.NODE_ENV='\"production\"'",
-    "build": "npm run build:client"
+    "build:worker": "esbuild worker/worker.ts --bundle --outfile=dist/index.js --platform=neutral --format=esm --sourcemap --main-fields=module,main --define:process.env.NODE_ENV='\"production\"'",
+    "build:client": "esbuild public/index.tsx --bundle --outfile=dist/bundle.js --jsx=automatic --platform=browser --format=esm --sourcemap --define:process.env.NODE_ENV='\"production\"'",
+    "copy:html": "node -e \"const fs = require('fs'); if (!fs.existsSync('dist')) fs.mkdirSync('dist', { recursive: true }); fs.copyFileSync('public/index.html', 'dist/index.html');\"",
+    "build": "npm run rimraf ./dist && npm run build:worker && npm run build:client && npm run copy:html",
+    "rimraf": "rimraf"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20240222.0",
@@ -15,7 +18,8 @@
     "typescript": "^5.0.0",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
-    "esbuild": "^0.20.0"
+    "esbuild": "^0.20.0",
+    "rimraf": "^5.0.5"
   },
   "dependencies": {
     "@google/genai": "^1.5.1",

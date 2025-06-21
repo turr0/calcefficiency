@@ -139,8 +139,25 @@ const App: React.FC = () => {
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Error desconocido del servidor.' })); // Try to parse error
-        throw new Error(errorData.error || `Error del servidor: ${response.status}`);
+        const errorPayload: unknown = await response.json()
+            .catch(() => ({ error: `El servidor devolvió ${response.status} pero el cuerpo del error no es JSON válido.` })); // More informative fallback for JSON parsing failure
+        
+        let extractedMessage: string | undefined;
+
+        if (typeof errorPayload === 'object' && errorPayload !== null) {
+          // Attempt to extract 'error', 'detail', or 'message' string properties from the payload
+          const ep = errorPayload as { error?: unknown, detail?: unknown, message?: unknown };
+          if (typeof ep.error === 'string' && ep.error) {
+            extractedMessage = ep.error;
+          } else if (typeof ep.detail === 'string' && ep.detail) {
+            extractedMessage = ep.detail;
+          } else if (typeof ep.message === 'string' && ep.message) {
+            extractedMessage = ep.message;
+          }
+        }
+        // If extractedMessage is undefined or an empty string, the fallback will be used,
+        // preserving the original logic of `someFalsyError || fallback`.
+        throw new Error(extractedMessage || `Error del servidor: ${response.status}`);
       }
 
       const result = await response.json();
@@ -151,9 +168,17 @@ const App: React.FC = () => {
       setSubmitMessage("¡Gracias! Sus resultados están listos y sus datos han sido procesados para nuestro equipo.");
       setShowResults(true);
 
-    } catch (error: any) {
+    } catch (error: any) { // error is explicitly 'any' as per original, but we handle its properties safely
       console.error("Error submitting data to worker:", error);
-      setSubmitMessage(`Hubo un error al procesar sus datos: ${error.message}. Por favor, intente nuevamente.`);
+      let displayErrorMessage = 'Ocurrió un error desconocido al procesar sus datos.';
+      if (error instanceof Error) {
+        displayErrorMessage = error.message;
+      } else if (typeof error === 'string') {
+        displayErrorMessage = error;
+      } else if (error && typeof (error as { message?: unknown }).message === 'string') {
+        displayErrorMessage = (error as { message: string }).message;
+      }
+      setSubmitMessage(`Hubo un error al procesar sus datos: ${displayErrorMessage}. Por favor, intente nuevamente.`);
       setShowResults(false);
     } finally {
       setIsSubmitting(false);
@@ -293,50 +318,4 @@ const App: React.FC = () => {
               <ResultItem label="Inversión Inicial Total" value={formatCurrency(calculations.totalInvestmentArs)} />
               <ResultItem label="ROI Estimado" value={`${calculations.roiPercentage.toFixed(1)} %`} isPrimary={true} isPositive={calculations.roiPercentage > 0} isNegative={calculations.roiPercentage < 0} />
               {inputs.avgSaleTicketArs && inputs.avgSaleTicketArs > 0 && calculations.estimatedAddedRevenueArs > 0 && (
-                <ResultItem label="Ingresos Anuales Adicionales Est." value={formatCurrency(calculations.estimatedAddedRevenueArs)} isPrimary={false}/>
-              )}
-            </div>
-            <div className="mt-8 text-center">
-              <button
-                onClick={handlePrint}
-                className="px-8 py-3 bg-[#007bff] text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition duration-150"
-              >
-                Imprimir / Guardar Resultados como PDF
-              </button>
-            </div>
-          </section>
-        )}
-      </div>
-
-      <footer className="text-center mt-12 pb-8">
-        <p className="text-sm text-gray-500">&copy; {new Date().getFullYear()} Efficiency24. Todos los cálculos son estimaciones.</p>
-        <p className="text-xs text-gray-400 mt-1">La preparación de datos se realiza de forma segura en el servidor. El envío real de correos no está implementado en esta demo.</p>
-      </footer>
-    </div>
-  );
-};
-
-interface ResultItemProps {
-  label: string;
-  value: string;
-  isPrimary?: boolean;
-  isPositive?: boolean;
-  isNegative?: boolean;
-}
-
-const ResultItem: React.FC<ResultItemProps> = ({ label, value, isPrimary = false, isPositive, isNegative }) => (
-  <div className={`p-4 rounded-lg shadow ${isPrimary ? 'bg-[#007bff] text-white' : 'bg-gray-100'}`}>
-    <p className={`text-sm ${isPrimary ? 'text-blue-100' : 'text-gray-600'}`}>{label}</p>
-    <p 
-      className={`text-2xl font-bold 
-        ${isPrimary ? 'text-white' : 
-          isPositive ? 'text-green-600' : 
-          isNegative ? 'text-red-600' : 'text-[#007bff]'
-        }`}
-    >
-      {value}
-    </p>
-  </div>
-);
-
-export default App;
+                <ResultItem
