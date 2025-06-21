@@ -1,13 +1,20 @@
-
 # Efficiency24 ROI Calculator (Cloudflare Worker Version)
 
-Web-based ROI calculator for Argentine SMEs considering Bitrix24 CRM + chatbot, deployed as a Cloudflare Worker.
+Web-based ROI calculator for Argentine SMEs considering Bitrix24 CRM + chatbot, deployed as a Cloudflare Worker. The Worker serves the static React frontend and provides a secure backend API endpoint for interacting with the Google Gemini API.
 
 ## Prerequisites
 
-*   Node.js and npm installed.
+*   Node.js and npm (or yarn/pnpm) installed.
 *   A Cloudflare account.
-*   Wrangler CLI installed globally or as a project dependency (`npm install -g wrangler` or `npm install --save-dev wrangler`).
+*   Wrangler CLI installed (`npm install -g wrangler` or add as a dev dependency).
+
+## Project Structure
+
+*   `public/`: Contains the client-side React application source files (`index.html`, `index.tsx`, `App.tsx`, components, etc.) and the bundled output (`bundle.js`).
+*   `worker/`: Contains the Cloudflare Worker script (`worker.ts`).
+*   `wrangler.toml`: Configuration for the Cloudflare Worker.
+*   `package.json`: Project dependencies and scripts.
+*   `tsconfig.json`: TypeScript configuration for both client and worker.
 
 ## Setup
 
@@ -21,76 +28,65 @@ Web-based ROI calculator for Argentine SMEs considering Bitrix24 CRM + chatbot, 
 
 3.  **Configure `wrangler.toml`:**
     *   Open `wrangler.toml`.
-    *   Fill in your Cloudflare `account_id`. You can find this in your Cloudflare dashboard.
+    *   Set your Cloudflare `account_id` if it's not configured globally.
+    *   The `name` of the worker can be customized.
+    *   The `[site].bucket` is set to `./public`, which is where your static frontend assets (including `bundle.js` after build) will be served from.
+    *   The `[build].command` is set to `npm run build:client`, which will compile your `public/index.tsx` into `public/bundle.js`.
 
-4.  **Set API Key Secret for Production:**
-    The Gemini API key must be set as a secret for your deployed worker.
-    ```bash
-    npx wrangler secret put API_KEY
-    ```
-    You will be prompted to enter the API key value. This is stored securely by Cloudflare and accessible to your worker script via `env.API_KEY`.
+4.  **API Key Management:**
+    The Google Gemini API key is handled securely by the Cloudflare Worker.
+    *   **For Production Deployment:** Set the `API_KEY` as a secret in your Worker's settings via the Cloudflare dashboard or Wrangler CLI:
+        ```bash
+        npx wrangler secret put API_KEY
+        ```
+        You will be prompted to enter your API key.
+    *   **For Local Development (`wrangler dev`):** Create a `.dev.vars` file in the project root:
+        ```
+        API_KEY="YOUR_GEMINI_API_KEY_FOR_LOCAL_DEV"
+        ```
+        **Important:** Add `.dev.vars` to your `.gitignore` file to prevent committing your API key.
+
+## Available Scripts
+
+*   **`npm run dev`**: Starts the local development server using Wrangler. This will also run the client build. Changes in `public/` source files should trigger a rebuild of `bundle.js`.
+*   **`npm run deploy`**: Builds the client-side application and deploys the Worker and static assets to Cloudflare.
+*   **`npm run build:client`**: Compiles `public/index.tsx` into `public/bundle.js` using `esbuild`. This is automatically run as part of `dev` and `deploy` if `wrangler.toml` is configured.
+*   **`npm run build`**: Alias for `build:client`.
 
 ## Local Development
 
-1.  **Create `.dev.vars` for Local API Key:**
-    For local development using `wrangler dev`, create a file named `.dev.vars` in the root of your project (alongside `wrangler.toml`). Add your Gemini API key to this file:
-    ```
-    API_KEY="YOUR_GEMINI_API_KEY_FOR_LOCAL_DEV"
-    ```
-    **IMPORTANT:** Ensure `.dev.vars` is listed in your `.gitignore` file to prevent committing your API key.
-
-2.  **Start the Development Server:**
+1.  Ensure you have a `.dev.vars` file with your `API_KEY` as described above.
+2.  Run:
     ```bash
     npm run dev
-    # or
-    npx wrangler dev
     ```
-    This will start a local server, typically on `http://localhost:8787`.
-
-## Client-Side Build (Important for TSX)
-
-The current setup serves `.tsx` files directly. Browsers **do not** understand TSX natively. For the React application to work correctly when deployed or in most local development scenarios, you need a build step to transpile TSX to JavaScript.
-
-*   **Recommendation:** Use a tool like `esbuild`, `Vite`, `Parcel`, or `create-react-app` (if starting fresh) to handle your client-side code.
-*   **Example with `esbuild` (manual setup):**
-    1.  Install `esbuild`: `npm install --save-dev esbuild`
-    2.  Add a build script to `package.json`:
-        ```json
-        "scripts": {
-          // ... other scripts
-          "build:client": "esbuild public/index.tsx --bundle --outfile=public/bundle.js --jsx=automatic --loader:.ts=tsx",
-          "build": "npm run build:client" // if you want wrangler build to trigger this
-        }
-        ```
-    3.  Update `public/index.html` to load `bundle.js`:
-        ```html
-        <script type="module" src="/bundle.js"></script>
-        ```
-    4.  If using the `[build]` section in `wrangler.toml`, uncomment and configure it:
-        ```toml
-        [build]
-        command = "npm run build:client" # Or "npm run build"
-        # watch_dir = "./public" # Or your client source dir if separate
-        ```
+    Wrangler will start a local server (typically `http://localhost:8787`), build the client-side assets, and serve your application.
 
 ## Deployment to Cloudflare
 
-1.  **Ensure `wrangler.toml` is configured and `API_KEY` secret is set.**
-2.  **Deploy the Worker:**
+1.  Ensure `wrangler.toml` is correctly configured and you have set the `API_KEY` secret in your Cloudflare Worker settings.
+2.  Run:
     ```bash
     npm run deploy
-    # or
-    npx wrangler deploy
     ```
-    Wrangler will build the worker (if a build command is specified) and deploy it along with the static assets in the `./public` directory.
+    Wrangler will build the client-side assets, then deploy your Worker script and the contents of the `public` directory (including `index.html` and `bundle.js`) to Cloudflare.
 
-## How it Works
+## How It Works
 
+*   **Client-Side Application (`public/`):**
+    *   A React application built with TypeScript/TSX.
+    *   User inputs data into the ROI calculator form.
+    *   When "Calcular y Ver Resultados" is clicked, the app sends the input data and calculated values via a `fetch` POST request to the `/api/prepare-email` endpoint provided by its own Cloudflare Worker.
+    *   Displays the results based on calculations and the (simulated) data preparation confirmation.
 *   **Cloudflare Worker (`worker/worker.ts`):**
-    *   Handles all incoming HTTP requests.
-    *   If a request is for `/api/prepare-email` (POST), it takes the input data, securely calls the Google Gemini API using the `API_KEY` secret, and returns the generated email body to the client.
-    *   For all other requests, it serves static files (HTML, CSS, client-side JS, images) from the `public` directory.
-*   **Frontend (`public/` directory):**
-    *   The React application (`App.tsx`, `index.tsx`, etc.).
-    *   Instead of calling the Gemini API directly, it makes a `fetch` request to its own worker's `/api/prepare-email` endpoint.
-    *   The API key is never exposed to the client-side code.
+    *   **API Endpoint (`/api/prepare-email`):**
+        *   Receives data from the client application.
+        *   Securely initializes the `GoogleGenAI` client using the `API_KEY` from Worker secrets.
+        *   Constructs a prompt and calls the Gemini API to generate an email body.
+        *   Returns the generated email body (or an error) to the client.
+    *   **Static Asset Serving:**
+        *   For all other requests, it uses `@cloudflare/kv-asset-handler` to serve static files (like `index.html`, `bundle.js`, images, etc.) from the `public` directory. This directory's contents are uploaded by Wrangler due to the `[site]` configuration.
+        *   It's configured to serve `index.html` for root path (`/`) and for SPA-style routing (unknown paths without file extensions).
+*   **Build Process:**
+    *   `esbuild` (triggered by `npm run build:client`) compiles `public/index.tsx` and all its imported React components and modules into a single `public/bundle.js` file.
+    *   `public/index.html` is configured to load this `bundle.js`.

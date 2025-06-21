@@ -1,6 +1,5 @@
-
 import React, { useState, useMemo, useCallback } from 'react';
-// GoogleGenAI import is no longer needed here as it's used server-side in the worker
+// GoogleGenAI import is removed as it's now used server-side in the worker.
 import { BITRIX_PLANS, DEFAULT_PLAN_KEY, DEFAULT_VALUES, USD_TO_ARS_EXCHANGE_RATE, BitrixPlan } from './constants';
 import InputField from './components/InputField';
 import SectionTitle from './components/SectionTitle';
@@ -13,8 +12,6 @@ const RevenueIcon = () => <svg xmlns="http://www.w3.org/2000/svg" fill="none" vi
 const ResultsIcon = () => <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75" /></svg>;
 const InfoIcon = () => <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" /></svg>;
 const EmailIcon = () => <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" /></svg>;
-
-// Client-side Gemini AI initialization is removed.
 
 const App: React.FC = () => {
   const [inputs, setInputs] = useState({
@@ -121,7 +118,7 @@ const App: React.FC = () => {
     return value.toLocaleString('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0, maximumFractionDigits: 0 });
   };
 
-  const prepareAndSubmitData = async () => {
+  const prepareAndSubmitDataToWorker = async () => {
     setIsSubmitting(true);
     setSubmitMessage('Procesando su información y generando resultados...');
     try {
@@ -135,20 +132,20 @@ const App: React.FC = () => {
         usdToArsExchangeRate: USD_TO_ARS_EXCHANGE_RATE
       };
 
-      const response = await fetch('/api/prepare-email', {
+      const response = await fetch('/api/prepare-email', { // Calls the Worker endpoint
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Error desconocido del servidor.' }));
+        const errorData = await response.json().catch(() => ({ error: 'Error desconocido del servidor.' })); // Try to parse error
         throw new Error(errorData.error || `Error del servidor: ${response.status}`);
       }
 
       const result = await response.json();
-      // The worker now directly returns the emailBody.
-      // We can log it here for client-side debugging if needed, but it's mainly for the worker's use.
+      // The worker returns { emailBody: "..." }
+      // We can log it client-side for debugging if needed, but it's mainly for the worker's internal use simulation
       // console.log("Email body prepared by worker:", result.emailBody); 
       
       setSubmitMessage("¡Gracias! Sus resultados están listos y sus datos han sido procesados para nuestro equipo.");
@@ -174,7 +171,7 @@ const App: React.FC = () => {
       return;
     }
     
-    await prepareAndSubmitData();
+    await prepareAndSubmitDataToWorker();
   };
 
   const handlePrint = () => {
@@ -237,7 +234,7 @@ const App: React.FC = () => {
               <InputField 
                 label="Selección de Plan Bitrix24" 
                 id="selectedBitrixPlanKey" 
-                type="text" // Will be rendered as select due to options prop
+                type="text" 
                 value={inputs.selectedBitrixPlanKey} 
                 onChange={handleInputChange} 
                 options={bitrixPlanOptions}
@@ -263,7 +260,6 @@ const App: React.FC = () => {
           </div>
         </div>
 
-        {/* Email Input and Submit Section */}
         <section className="mt-10 pt-8 border-t border-gray-300">
            <SectionTitle title="Obtenga sus Resultados Personalizados" icon={<EmailIcon />} />
           <p className="text-sm text-gray-600 mb-4">Ingrese su correo para recibir sus resultados personalizados.</p>
@@ -279,7 +275,7 @@ const App: React.FC = () => {
           
           <button
             onClick={handleShowResults}
-            disabled={isSubmitting}
+            disabled={isSubmitting} // Button is disabled only when submitting
             className="w-full mt-4 px-8 py-3 bg-[#007bff] text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSubmitting ? 'Procesando...' : 'Calcular y Ver Resultados'}
@@ -287,8 +283,6 @@ const App: React.FC = () => {
           {submitMessage && <p className={`text-sm mt-2 ${showResults ? 'text-green-600' : 'text-gray-700'}`}>{submitMessage}</p>}
         </section>
 
-
-        {/* Results Section - Conditional Rendering */}
         {showResults && (
           <section className="mt-12 pt-8 border-t border-gray-300">
             <SectionTitle title="Resumen de Resultados Estimados" icon={<ResultsIcon />} />
