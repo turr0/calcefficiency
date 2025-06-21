@@ -1,6 +1,9 @@
 name = "calcefficiency"
-main = "src/index.ts"
+main = "dist/index.js"               # Cambiado para apuntar al archivo generado por el build
 compatibility_date = "2024-01-01"
 
 [site]
-bucket = "./public"
+bucket = "./public"                  # Carpeta con archivos estáticos para el sitio
+
+# Opcionalmente, si usas workers.dev para desarrollo:
+workers_dev = true
