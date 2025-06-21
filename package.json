@@ -3,7 +3,9 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "build": "vite build",
+    "build:client": "vite build",
+    "build:worker": "esbuild worker/worker.ts --bundle --outfile=dist/_worker.js --platform=neutral --format=esm --minify --sourcemap",
+    "build": "bun run build:client && bun run build:worker",
     "deploy": "npx wrangler deploy",
     "dev": "npx wrangler dev"
   },
