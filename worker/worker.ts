@@ -1,4 +1,5 @@
 /// <reference types="@cloudflare/workers-types" />
+import type { KVNamespace, ExecutionContext } from '@cloudflare/workers-types';
 
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 
@@ -71,7 +72,7 @@ export default {
         const {
           userEmail, inputs, calculations, selectedBitrixPlan, annualLicenseCostArs,
           fixedImplementationCostArs, usdToArsExchangeRate
-        } = await request.json(); // Define a more specific type if needed
+        } = await request.json() as any; // Cast to any or define a specific type for the request body
 
         const formatCurrency = (value: number | null | undefined) => {
           if (value === null || value === undefined) return 'N/A';
