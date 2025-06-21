@@ -1,3 +1,3 @@
-name = "calcefficiency"          # Cambialo por el nombre que quieras para tu Worker
-main = "index.js"                     # Archivo principal de tu Worker (ajustalo si es otro)
-compatibility_date = "2025-06-21"    # Fecha de compatibilidad recomendada (puede ser la fecha actual)
+name = "worker-name"
+main = "index.js"
+compatibility_date = "2025-06-21"
