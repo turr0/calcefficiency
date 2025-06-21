@@ -79,11 +79,24 @@ const App: React.FC = () => {
       avgSaleTicketArs, currentConversionRate, expectedConversionRateChatbot
     } = inputs;
 
-    const chatbotMonthlyHoursSaved = (inquiriesPerMonth * (automationPercentageChatbot / 100) * timePerInquiryMinutes) / 60;
-    const annualCostSavingsChatbotArs = chatbotMonthlyHoursSaved * hourlyCostArs * 12;
+    // Ensure all inputs used in calculations are numbers, defaulting to 0 if null or not a number
+    const numInquiriesPerMonth = Number(inquiriesPerMonth) || 0;
+    const numAutomationPercentageChatbot = Number(automationPercentageChatbot) || 0;
+    const numTimePerInquiryMinutes = Number(timePerInquiryMinutes) || 0;
+    const numManualCrmHoursMonthly = Number(manualCrmHoursMonthly) || 0;
+    const numAutomationPercentageCrm = Number(automationPercentageCrm) || 0;
+    const numTeamMembers = Number(teamMembers) || 0;
+    const numHourlyCostArs = Number(hourlyCostArs) || 0;
+    const numAvgSaleTicketArs = Number(avgSaleTicketArs) || 0;
+    const numCurrentConversionRate = Number(currentConversionRate) || 0;
+    const numExpectedConversionRateChatbot = Number(expectedConversionRateChatbot) || 0;
 
-    const crmAnnualHoursSaved = manualCrmHoursMonthly * (automationPercentageCrm / 100) * teamMembers * 12;
-    const annualCostSavingsCrmArs = crmAnnualHoursSaved * hourlyCostArs;
+
+    const chatbotMonthlyHoursSaved = (numInquiriesPerMonth * (numAutomationPercentageChatbot / 100) * numTimePerInquiryMinutes) / 60;
+    const annualCostSavingsChatbotArs = chatbotMonthlyHoursSaved * numHourlyCostArs * 12;
+
+    const crmAnnualHoursSaved = numManualCrmHoursMonthly * (numAutomationPercentageCrm / 100) * numTeamMembers * 12;
+    const annualCostSavingsCrmArs = crmAnnualHoursSaved * numHourlyCostArs;
     
     const totalAnnualCostSavingsArs = annualCostSavingsChatbotArs + annualCostSavingsCrmArs;
     const totalInvestmentArs = annualLicenseCostArs + DEFAULT_VALUES.fixedImplementationCostArs;
@@ -93,10 +106,10 @@ const App: React.FC = () => {
     const totalHoursSavedAnnual = (chatbotMonthlyHoursSaved * 12) + crmAnnualHoursSaved;
 
     let estimatedAddedRevenueArs = 0;
-    if (avgSaleTicketArs !== null && avgSaleTicketArs > 0 && currentConversionRate !== null && expectedConversionRateChatbot !== null) {
-      const conversionImprovement = (expectedConversionRateChatbot / 100) - (currentConversionRate / 100);
+    if (numAvgSaleTicketArs > 0) {
+      const conversionImprovement = (numExpectedConversionRateChatbot / 100) - (numCurrentConversionRate / 100);
       if (conversionImprovement > 0) {
-        estimatedAddedRevenueArs = inquiriesPerMonth * conversionImprovement * avgSaleTicketArs * 12;
+        estimatedAddedRevenueArs = numInquiriesPerMonth * conversionImprovement * numAvgSaleTicketArs * 12;
       }
     }
 
@@ -114,8 +127,8 @@ const App: React.FC = () => {
   }, [inputs, annualLicenseCostArs]);
 
   const formatCurrency = (value: number | null | undefined) => {
-    if (value === null || value === undefined) return 'N/A';
-    return value.toLocaleString('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    if (value === null || value === undefined || isNaN(Number(value))) return 'N/A';
+    return Number(value).toLocaleString('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0, maximumFractionDigits: 0 });
   };
 
   const prepareAndSubmitDataToWorker = async () => {
@@ -140,12 +153,11 @@ const App: React.FC = () => {
 
       if (!response.ok) {
         const errorPayload: unknown = await response.json()
-            .catch(() => ({ error: `El servidor devolvió ${response.status} pero el cuerpo del error no es JSON válido.` })); // More informative fallback for JSON parsing failure
+            .catch(() => ({ error: `El servidor devolvió ${response.status} pero el cuerpo del error no es JSON válido.` })); 
         
         let extractedMessage: string | undefined;
 
         if (typeof errorPayload === 'object' && errorPayload !== null) {
-          // Attempt to extract 'error', 'detail', or 'message' string properties from the payload
           const ep = errorPayload as { error?: unknown, detail?: unknown, message?: unknown };
           if (typeof ep.error === 'string' && ep.error) {
             extractedMessage = ep.error;
@@ -155,20 +167,16 @@ const App: React.FC = () => {
             extractedMessage = ep.message;
           }
         }
-        // If extractedMessage is undefined or an empty string, the fallback will be used,
-        // preserving the original logic of `someFalsyError || fallback`.
         throw new Error(extractedMessage || `Error del servidor: ${response.status}`);
       }
 
-      const result = await response.json();
-      // The worker returns { emailBody: "..." }
-      // We can log it client-side for debugging if needed, but it's mainly for the worker's internal use simulation
-      // console.log("Email body prepared by worker:", result.emailBody); 
+      // const result = await response.json(); // Not strictly needed to use result.emailBody on client
+      await response.json(); 
       
       setSubmitMessage("¡Gracias! Sus resultados están listos y sus datos han sido procesados para nuestro equipo.");
       setShowResults(true);
 
-    } catch (error: any) { // error is explicitly 'any' as per original, but we handle its properties safely
+    } catch (error: any) { 
       console.error("Error submitting data to worker:", error);
       let displayErrorMessage = 'Ocurrió un error desconocido al procesar sus datos.';
       if (error instanceof Error) {
@@ -302,20 +310,67 @@ const App: React.FC = () => {
             onClick={handleShowResults}
             disabled={isSubmitting} // Button is disabled only when submitting
             className="w-full mt-4 px-8 py-3 bg-[#007bff] text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-live="polite" // Announce changes in button text/state
           >
             {isSubmitting ? 'Procesando...' : 'Calcular y Ver Resultados'}
           </button>
-          {submitMessage && <p className={`text-sm mt-2 ${showResults ? 'text-green-600' : 'text-gray-700'}`}>{submitMessage}</p>}
+          {submitMessage && <p role="alert" className={`text-sm mt-2 ${showResults ? 'text-green-600' : 'text-gray-700'}`}>{submitMessage}</p>}
         </section>
 
         {showResults && (
-          <section className="mt-12 pt-8 border-t border-gray-300">
-            <SectionTitle title="Resumen de Resultados Estimados" icon={<ResultsIcon />} />
+          <section className="mt-12 pt-8 border-t border-gray-300" aria-labelledby="results-title">
+            <SectionTitle title="Resumen de Resultados Estimados" icon={<ResultsIcon />} id="results-title" />
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               <ResultItem label="Total de Horas Anuales Ahorradas" value={`${calculations.totalHoursSavedAnnual.toFixed(0)} horas`} />
               <ResultItem label="Ahorro Anual Total de Costos" value={formatCurrency(calculations.totalAnnualCostSavingsArs)} isPrimary={true} />
               <ResultItem label="Costo Anual Licencia Bitrix24" value={formatCurrency(annualLicenseCostArs)} />
               <ResultItem label="Inversión Inicial Total" value={formatCurrency(calculations.totalInvestmentArs)} />
               <ResultItem label="ROI Estimado" value={`${calculations.roiPercentage.toFixed(1)} %`} isPrimary={true} isPositive={calculations.roiPercentage > 0} isNegative={calculations.roiPercentage < 0} />
-              {inputs.avgSaleTicketArs && inputs.avgSaleTicketArs > 0 && calculations.estimatedAddedRevenueArs > 0 && (
-                <ResultItem
+              {(inputs.avgSaleTicketArs && Number(inputs.avgSaleTicketArs) > 0 && calculations.estimatedAddedRevenueArs > 0) && (
+                <ResultItem label="Ingresos Anuales Adicionales Est." value={formatCurrency(calculations.estimatedAddedRevenueArs)} isPrimary={false}/>
+              )}
+            </div>
+            <div className="mt-8 text-center">
+              <button
+                onClick={handlePrint}
+                className="px-8 py-3 bg-[#007bff] text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition duration-150"
+              >
+                Imprimir / Guardar Resultados como PDF
+              </button>
+            </div>
+          </section>
+        )}
+      </div>
+
+      <footer className="text-center mt-12 pb-8">
+        <p className="text-sm text-gray-500">&copy; {new Date().getFullYear()} Efficiency24. Todos los cálculos son estimaciones.</p>
+        <p className="text-xs text-gray-400 mt-1">La preparación de datos para envío interno utiliza una API externa. El envío real de correos no está implementado en esta demo.</p>
+      </footer>
+    </div>
+  );
+};
+
+interface ResultItemProps {
+  label: string;
+  value: string;
+  isPrimary?: boolean;
+  isPositive?: boolean;
+  isNegative?: boolean;
+}
+
+const ResultItem: React.FC<ResultItemProps> = ({ label, value, isPrimary = false, isPositive, isNegative }) => (
+  <div className={`p-4 rounded-lg shadow ${isPrimary ? 'bg-[#007bff] text-white' : 'bg-gray-100'}`}>
+    <p className={`text-sm ${isPrimary ? 'text-blue-100' : 'text-gray-600'}`}>{label}</p>
+    <p 
+      className={`text-2xl font-bold 
+        ${isPrimary ? 'text-white' : 
+          isPositive ? 'text-green-600' : 
+          isNegative ? 'text-red-600' : 'text-[#007bff]'
+        }`}
+    >
+      {value}
+    </p>
+  </div>
+);
+
+export default App;
