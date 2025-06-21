@@ -1,14 +1,14 @@
 /// <reference types="@cloudflare/workers-types" />
 
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
-// Solo necesitamos getAssetFromKV, mapRequestToAsset es más avanzado y puede complicar.
-// Para SPAs, es mejor manejar la redirección a index.html manualmente si el path no existe.
-import { getAssetFromKV } from "@cloudflare/kv-asset-handler"; 
+import { getAssetFromKV, mapRequestToAsset } from "@cloudflare/kv-asset-handler";
+// KVNamespace and ExecutionContext are now globally available via the triple-slash directive
+// import type { KVNamespace, ExecutionContext } from '@cloudflare/workers-types'; // Removed
 
 export interface Env {
   API_KEY: string;
   __STATIC_CONTENT: KVNamespace;
-  // REMOVIDO: __STATIC_CONTENT_MANIFEST ya no es necesario aquí con la configuración [site] en wrangler.toml
+  __STATIC_CONTENT_MANIFEST: string;
 }
 
 // Define the expected structure of the request body from the client
@@ -103,40 +103,32 @@ No incluyas un asunto en tu respuesta, solo el cuerpo del correo.
       }
     }
     
-    // Para cualquier otra solicitud (que no sea la API), intenta servir activos estáticos
+    // For any other request, try to serve static assets
     try {
-      // Opciones para getAssetFromKV
-      // Aquí, getAssetFromKV con ASSET_NAMESPACE será suficiente
-      // Cloudflare Pages/Workers Sites manejan el manifest internamente con [site]
-      const assetResponse = await getAssetFromKV(
+      return await getAssetFromKV(
         {
           request: request,
           waitUntil: (promise) => ctx.waitUntil(promise),
         },
         {
           ASSET_NAMESPACE: env.__STATIC_CONTENT,
-          // REMOVIDO: ASSET_MANIFEST ya no se necesita aquí.
-          // mapRequestToAsset es útil para manejar rutas SPA.
+          ASSET_MANIFEST: JSON.parse(env.__STATIC_CONTENT_MANIFEST),
           mapRequestToAsset: (req) => {
             const url = new URL(req.url);
-            // Si la solicitud es para la raíz o una ruta que parece no ser un archivo (sin extensión),
-            // intenta servir index.html (común para SPAs)
-            if (url.pathname === '/' || !url.pathname.includes('.')) {
-              return new Request(`${url.origin}/index.html`, req);
+            // If the request is for the root or an unknown path without extension (common for SPAs), serve index.html
+            if (url.pathname === '/' || url.pathname === '' || !url.pathname.includes('.')) {
+              return mapRequestToAsset(new Request(`${url.origin}/index.html`, req));
             }
-            // Para otras rutas, sirve el archivo tal cual
-            return req;
+            return mapRequestToAsset(req);
           },
         }
       );
-      return assetResponse;
-
-    } catch (e: any) {
+    } catch (e) {
       console.error("Error serving static asset:", e);
-      // Si el activo no se encuentra (por ejemplo, es una ruta que no existe)
-      // y la lógica de `mapRequestToAsset` para SPA ya ha intentado index.html,
-      // entonces es un 404 genuino.
-      // Puedes refinar esto para manejar 404s específicos o redirigir a una página de error.
+      // If asset not found, and it's not index.html that failed, you can return a 404
+      // but usually for SPAs, if getAssetFromKV fails (even for index.html), it means something is misconfigured.
+      // The mapRequestToAsset change above tries to serve index.html for SPA routes.
+      // If it still fails, it's a genuine 404 for a file that doesn't exist.
       return new Response("Asset not found or error in serving static content.", { status: 404 });
     }
   },

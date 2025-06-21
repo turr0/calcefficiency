@@ -4,6 +4,7 @@ import react from '@vitejs/plugin-react'
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
+  base: '/', // Ensure assets are referenced from the root for SPA deployment
   root: 'public', // Process files in the 'public' directory (e.g., public/index.html)
   build: {
     outDir: '../dist', // Output to project_root/dist (relative from 'public' root)
