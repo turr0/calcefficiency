@@ -1,0 +1,27 @@
+name = "calcefficiency-worker" # Un nombre único para tu Worker
+# Utiliza una fecha de compatibilidad reciente para las últimas características
+compatibility_date = "2025-06-21"
+
+# Tu Account ID de Cloudflare (obligatorio)
+# ¡REEMPLAZA ESTO CON TU ACCOUNT ID REAL DE CLOUDFLARE!
+account_id = "38cba2f6562e19b783108f208472d27e"
+
+# Desplegar en tu subdominio workers.dev
+workers_dev = true
+
+# Si vas a usar un dominio personalizado (ej. calcefficiency.com), descomenta y configura:
+# route = "calcefficiency.com/*"
+# zone_id = "TU_ZONE_ID_DE_CLOUDFLARE"
+
+# CONFIGURACIÓN DEL TRABAJADOR (WORKER)
+# 'main' apunta al archivo JavaScript compilado de tu Worker.
+# Asumimos que 'worker/worker.ts' se compilará a 'worker/dist/worker.js'
+main = "worker/dist/worker.js"
+
+
+# CONFIGURACIÓN DE ACTIVOS ESTÁTICOS (FRONTEND)
+# '[assets]' se usa cuando tu Worker principal no es un "Workers Site" genérico,
+# sino que tú controlas cómo se sirven los activos.
+[assets]
+bucket = "./dist" # Esta es la carpeta donde Vite construirá tu aplicación React.
+                  # Asegúrate de que tu script de build de Vite apunte a esta carpeta.
