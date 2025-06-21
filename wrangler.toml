@@ -1,6 +1,7 @@
 name = "calcefficiency"
-account_id = "38cba2f6562e19b783108f208472d27e"
-workers_dev = true
-compatibility_date = "2025-06-21"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
 
-main = "worker/worker.ts"
+[site]
+bucket = "./public"
+entry-point = "src"
