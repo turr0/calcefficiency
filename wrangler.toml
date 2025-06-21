@@ -1,0 +1,20 @@
+name = "worker-name"                        # Nombre de tu Worker en Cloudflare
+compatibility_date = "2025-06-21"           # Fecha para compatibilidad de runtime
+main = "dist/index.js"                       # Ruta al archivo principal compilado (puede ser src/index.ts si no usas build)
+
+# Si quieres desplegar assets estáticos junto con el Worker:
+[assets]
+directory = "./dist"                         # Carpeta con tus archivos estáticos
+
+# Opcional: configuración para despliegue en workers.dev
+workers_dev = true
+
+# Opcional: rutas personalizadas para producción
+# route = "example.com/*"
+# zone_id = "tu-zone-id"
+
+# Variables de entorno (no sensibles)
+[vars]
+API_KEY = "AIzaSyDkCcArRpHJYDKg_R4Lwag6U__iPYUiQIU"
+
+# Para secretos sensibles, usa wrangler secret put (no va aquí)
