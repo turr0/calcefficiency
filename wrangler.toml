@@ -4,6 +4,3 @@ workers_dev = true
 compatibility_date = "2025-06-21"
 
 main = "worker/worker.ts"
-
-[site]
-bucket = "./public"
