@@ -1,0 +1,29 @@
+name = "calcefficiency-worker" # El nombre de tu Worker, como aparece en Cloudflare
+
+# Importante: Usa una fecha de compatibilidad reciente. Puedes usar la fecha de hoy,
+# o la que te sugiera Wrangler al ejecutar un comando como `wrangler dev` por primera vez.
+# La que aparecía en tu log era "2025-06-21", podemos usar esa.
+compatibility_date = "2025-06-21" 
+
+# TU ID de cuenta de Cloudflare. MUY IMPORTANTE: Debes reemplazar este valor
+# con tu Account ID real de Cloudflare. Lo encuentras en el dashboard de Cloudflare,
+# en la página principal de tu cuenta o en la sección de Workers.
+account_id = "38cba2f6562e19b783108f208472d27e" 
+
+# Esto permite que tu Worker esté disponible en un subdominio .workers.dev
+workers_dev = true
+
+# La ruta a tu Worker compilado.
+# Vite y esbuild generan el Worker en `dist/_worker.js`.
+main = "dist/_worker.js" 
+
+# Sección para el despliegue de sitios estáticos (Cloudflare Pages/Workers Sites)
+[site]
+# La carpeta donde Vite coloca los archivos estáticos de tu frontend después de `bun run build`.
+# Debe ser la carpeta `dist`.
+bucket = "./dist" 
+
+# Opcional: Esto especifica el archivo de entrada para Workers Sites.
+# No siempre es estrictamente necesario si `index.html` está en la raíz del bucket,
+# pero puede ayudar en algunos casos.
+# entry-point = "worker" 
