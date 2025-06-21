@@ -1,3 +1,5 @@
 name = "worker-name"
-main = "index.js"
 compatibility_date = "2025-06-21"
+
+[assets]
+directory = "./dist"
