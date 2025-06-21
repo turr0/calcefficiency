@@ -9,10 +9,6 @@ account_id = "38cba2f6562e19b783108f208472d27e"
 # Desplegar en tu subdominio workers.dev
 workers_dev = true
 
-# Si vas a usar un dominio personalizado (ej. calcefficiency.com), descomenta y configura:
-# route = "calcefficiency.com/*"
-# zone_id = "TU_ZONE_ID_DE_CLOUDFLARE"
-
 # CONFIGURACIÓN DEL TRABAJADOR (WORKER)
 # 'main' apunta al archivo JavaScript compilado de tu Worker.
 # Asumimos que 'worker/worker.ts' se compilará a 'worker/dist/worker.js'
