@@ -1,39 +1,96 @@
-# Efficiency24 ROI Calculator
 
-Web-based ROI calculator for Argentine SMEs considering Bitrix24 CRM + chatbot.
+# Efficiency24 ROI Calculator (Cloudflare Worker Version)
 
-## Deployment to Cloudflare Pages
+Web-based ROI calculator for Argentine SMEs considering Bitrix24 CRM + chatbot, deployed as a Cloudflare Worker.
 
-This application can be deployed as a static site to Cloudflare Pages.
+## Prerequisites
 
-1.  **Connect Your Repository or Upload Files:**
-    *   In your Cloudflare dashboard, go to Workers & Pages > Create application > Pages.
-    *   Connect to your Git provider (GitHub, GitLab) and select your repository, or choose direct upload.
+*   Node.js and npm installed.
+*   A Cloudflare account.
+*   Wrangler CLI installed globally or as a project dependency (`npm install -g wrangler` or `npm install --save-dev wrangler`).
 
-2.  **Build Settings (If Using Git):**
-    *   **Production Branch:** Select your main branch (e.g., `main`).
-    *   **Build command:** For this project's current structure (no dedicated build step like Vite or Webpack), you can often leave this blank, or if Cloudflare requires one for static sites without a framework preset, a simple command like `mkdir -p public && cp -r ./* ./public/ || true` (to create a dummy output directory if needed) might work. However, typically for serving root files, no build command is needed if you don't select a framework preset.
-    *   **Build output directory:** If you used a build command that outputs to a specific directory (like `public` or `dist`), specify it here. If serving from the root, this might be `/` or left blank depending on Cloudflare's UI for "no framework" projects. Often, selecting "None" as the framework preset handles this correctly.
+## Setup
 
-3.  **Environment Variables (Crucial for API Key):**
-    *   In your Cloudflare Pages project settings, navigate to Settings > Environment variables.
-    *   Under "Production" (and "Preview" if desired), click "Add variable".
-    *   Set Variable name: `API_KEY`
-    *   Set Value: `YOUR_GOOGLE_GEMINI_API_KEY` (paste your actual API key here).
-    *   Ensure "Encrypt" is checked if sensitive.
+1.  **Clone/Download Files:**
+    Ensure you have all the project files.
 
-4.  **Deploy.**
+2.  **Install Dependencies:**
+    ```bash
+    npm install
+    ```
 
-### Important Note on API Key Accessibility for Client-Side Code:
+3.  **Configure `wrangler.toml`:**
+    *   Open `wrangler.toml`.
+    *   Fill in your Cloudflare `account_id`. You can find this in your Cloudflare dashboard.
 
-The application's client-side JavaScript (`App.tsx`) expects the Google Gemini API key to be available via `process.env.API_KEY`.
+4.  **Set API Key Secret for Production:**
+    The Gemini API key must be set as a secret for your deployed worker.
+    ```bash
+    npx wrangler secret put API_KEY
+    ```
+    You will be prompted to enter the API key value. This is stored securely by Cloudflare and accessible to your worker script via `env.API_KEY`.
 
-*   **Cloudflare Environment Variables:** Environment variables set in the Cloudflare Pages dashboard (like `API_KEY`) are primarily accessible during the **build process** or by **Cloudflare Functions**. They are **not** automatically exposed directly to your static, client-side JavaScript files.
+## Local Development
 
-*   **Impact on Functionality:** Without a build step specifically designed to inject `API_KEY` into your client-side JavaScript bundle, or using a Cloudflare Function to proxy API requests or serve the key, the Gemini API-dependent features in this application will be **disabled**. The application is designed to log a warning to the console and degrade gracefully in this scenario (i.e., the ROI calculations will work, but the email content preparation via Gemini will not).
+1.  **Create `.dev.vars` for Local API Key:**
+    For local development using `wrangler dev`, create a file named `.dev.vars` in the root of your project (alongside `wrangler.toml`). Add your Gemini API key to this file:
+    ```
+    API_KEY="YOUR_GEMINI_API_KEY_FOR_LOCAL_DEV"
+    ```
+    **IMPORTANT:** Ensure `.dev.vars` is listed in your `.gitignore` file to prevent committing your API key.
 
-*   **For Full Gemini API Functionality on Cloudflare Pages:**
-    *   **Option 1 (Recommended for robust projects):** Integrate a build tool (like Vite, Parcel, or Create React App). These tools can replace `process.env.API_KEY` (or a similar construct like `import.meta.env.VITE_API_KEY`) in your code with the actual key value from Cloudflare's build environment variables during the build process. You would then specify the appropriate build command in Cloudflare Pages.
-    *   **Option 2 (Advanced):** Use a Cloudflare Worker to either proxy requests to the Gemini API (handling the API key server-side) or to inject the API key into the `index.html` response.
+2.  **Start the Development Server:**
+    ```bash
+    npm run dev
+    # or
+    npx wrangler dev
+    ```
+    This will start a local server, typically on `http://localhost:8787`.
 
-For the current simple file structure, deploying directly will result in Gemini features being inactive unless you implement one of the advanced methods above for making the `API_KEY` securely available to the client-side code.
+## Client-Side Build (Important for TSX)
+
+The current setup serves `.tsx` files directly. Browsers **do not** understand TSX natively. For the React application to work correctly when deployed or in most local development scenarios, you need a build step to transpile TSX to JavaScript.
+
+*   **Recommendation:** Use a tool like `esbuild`, `Vite`, `Parcel`, or `create-react-app` (if starting fresh) to handle your client-side code.
+*   **Example with `esbuild` (manual setup):**
+    1.  Install `esbuild`: `npm install --save-dev esbuild`
+    2.  Add a build script to `package.json`:
+        ```json
+        "scripts": {
+          // ... other scripts
+          "build:client": "esbuild public/index.tsx --bundle --outfile=public/bundle.js --jsx=automatic --loader:.ts=tsx",
+          "build": "npm run build:client" // if you want wrangler build to trigger this
+        }
+        ```
+    3.  Update `public/index.html` to load `bundle.js`:
+        ```html
+        <script type="module" src="/bundle.js"></script>
+        ```
+    4.  If using the `[build]` section in `wrangler.toml`, uncomment and configure it:
+        ```toml
+        [build]
+        command = "npm run build:client" # Or "npm run build"
+        # watch_dir = "./public" # Or your client source dir if separate
+        ```
+
+## Deployment to Cloudflare
+
+1.  **Ensure `wrangler.toml` is configured and `API_KEY` secret is set.**
+2.  **Deploy the Worker:**
+    ```bash
+    npm run deploy
+    # or
+    npx wrangler deploy
+    ```
+    Wrangler will build the worker (if a build command is specified) and deploy it along with the static assets in the `./public` directory.
+
+## How it Works
+
+*   **Cloudflare Worker (`worker/worker.ts`):**
+    *   Handles all incoming HTTP requests.
+    *   If a request is for `/api/prepare-email` (POST), it takes the input data, securely calls the Google Gemini API using the `API_KEY` secret, and returns the generated email body to the client.
+    *   For all other requests, it serves static files (HTML, CSS, client-side JS, images) from the `public` directory.
+*   **Frontend (`public/` directory):**
+    *   The React application (`App.tsx`, `index.tsx`, etc.).
+    *   Instead of calling the Gemini API directly, it makes a `fetch` request to its own worker's `/api/prepare-email` endpoint.
+    *   The API key is never exposed to the client-side code.
