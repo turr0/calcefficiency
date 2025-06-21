@@ -1,0 +1,16 @@
+name = "mi-app"
+type = "javascript"
+
+account_id = "38cba2f6562e19b783108f208472d27e"
+workers_dev = true
+compatibility_date = "2024-06-21"
+
+main = "worker/worker.ts"
+
+[build]
+command = "npm run build" # o el comando que compile tu app si es necesario
+upload.format = "modules"
+
+[site]
+bucket = "./public"
+entry-point = "worker"
