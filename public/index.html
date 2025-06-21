@@ -14,11 +14,11 @@
     .bg-brand-blue { background-color: #007bff; }
     .border-brand-blue { border-color: #007bff; }
   </style>
-<!-- Import map removed as React and ReactDOM are now bundled into /bundle.js -->
-<!-- Client-side API_KEY script and related process.env polyfill are removed. API key is handled server-side. -->
+<!-- Import map removed. Vite will bundle dependencies. -->
+<!-- Client-side API_KEY script and process.env polyfill were already removed, which is correct. -->
 </head>
 <body class="bg-gray-100">
   <div id="root"></div>
-  <script type="module" src="/bundle.js"></script>
+  <script type="module" src="/index.tsx"></script> <!-- Vite will process this entry point -->
 </body>
 </html>

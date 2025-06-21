@@ -1,17 +1,20 @@
-import path from 'path';
-import { defineConfig, loadEnv } from 'vite';
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
 
-export default defineConfig(({ mode }) => {
-    const env = loadEnv(mode, '.', '');
-    return {
-      define: {
-        'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-        'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)
-      },
-      resolve: {
-        alias: {
-          '@': path.resolve(__dirname, '.'),
-        }
-      }
-    };
-});
+// https://vitejs.dev/config/
+export default defineConfig({
+  plugins: [react()],
+  root: 'public', // Process files in the 'public' directory (e.g., public/index.html)
+  build: {
+    outDir: '../dist', // Output to project_root/dist (relative from 'public' root)
+    emptyOutDir: true, // Clean the dist directory before building
+  },
+  server: {
+    // For local dev, proxy API requests to the worker if running 'vite dev' separately
+    // from 'wrangler dev'. However, 'wrangler dev' with the [build] command
+    // is the recommended way to test the integrated setup.
+    // proxy: {
+    //   '/api': 'http://localhost:8787' // Assuming wrangler dev runs on 8787
+    // }
+  }
+})
