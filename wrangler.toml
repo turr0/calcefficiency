@@ -1,0 +1,15 @@
+name = "calcefficiency-worker"
+compatibility_date = "2025-06-21" # Usa esta fecha exacta o una posterior de tu log
+
+account_id = "38cba2f6562e19b783108f208472d27e" # ¡IMPORTANTE: REEMPLAZA ESTO CON TU ACCOUNT ID REAL!
+
+workers_dev = true
+
+# El 'main' ahora apunta directamente al Worker compilado dentro de la carpeta 'dist',
+# que es donde el script 'build:worker' lo coloca.
+main = "dist/_worker.js"
+
+# La sección '[site]' le dice a Cloudflare que suba y sirva todo el contenido
+# de la carpeta 'dist' como activos estáticos para tu Workers Site.
+[site]
+bucket = "./dist"
