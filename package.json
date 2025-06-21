@@ -18,7 +18,7 @@
     "esbuild": "^0.20.0"
   },
   "dependencies": {
-    "@google/genai": "0.21.0",
+    "@google/genai": "^1.5.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "@cloudflare/kv-asset-handler": "^0.3.0"
