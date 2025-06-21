@@ -15,6 +15,6 @@ workers_dev = true
 
 # Variables de entorno (no sensibles)
 [vars]
-API_KEY = "secrets.APIKEY"
+API_KEY = "APIKEY"
 
 # Para secretos sensibles, usa wrangler secret put (no va aquí)
