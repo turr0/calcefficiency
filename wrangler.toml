@@ -1,10 +1,10 @@
 name = "calcefficiency-worker" # Un nombre único para tu Worker
-main = "src/index.js" # La ruta a tu archivo Worker principal (ej. worker.js, index.ts)
-compatibility_date = "2023-06-28" # Usa una fecha de compatibilidad reciente
+compatibility_date = "2025-06-21" # Fecha de compatibilidad, puedes mantener esta.
 
-# Si deseas desplegar en tu subdominio workers.dev (ej. calcefficiency-worker.turr0.workers.dev)
+# Tu Account ID de Cloudflare
+account_id = "38cba2f6562e19b783108f208472d27e"
+
+# Desplegará en tu subdominio workers.dev (ej. calcefficiency-worker.tu-username.workers.dev)
 workers_dev = true
 
-# Tu Account ID de Cloudflare (obligatorio)
-# Lo puedes encontrar en tu Dashboard de Cloudflare.
-account_id = "38cba2f6562e19b783108f208472d27e"
+# Configuración para Workers Sites, sirviendo tu aplicación React
